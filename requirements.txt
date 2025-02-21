@@ -1,0 +1,6 @@
+keyboard 
+flask 
+pandas 
+scikit-learn
+numpy
+matplotlib

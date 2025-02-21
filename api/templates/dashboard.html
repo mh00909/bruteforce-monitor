@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Monitorujący</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>🔥 Dashboard Monitorujący Ataki Brute-Force 🔒</h1>
+
+    <section>
+        <h2>📊 Próby logowania</h2>
+        <canvas id="loginAttemptsChart" width="400" height="200"></canvas>
+    </section>
+
+    <section>
+        <h2>🚫 Zbanowane IP</h2>
+        <ul id="blockedIpsList"></ul>
+    </section>
+
+    <script src="/static/js/charts.js"></script>
+</body>
+</html>
