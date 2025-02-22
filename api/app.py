@@ -1,10 +1,13 @@
 from flask import Flask, render_template
 from api.routes import api_blueprint
-
+from flask_cors import CORS
 
 
 app = Flask(__name__)
 app.register_blueprint(api_blueprint, url_prefix="/api")
+CORS(app)
+
+app.config['SECRET_KEY'] = 'secret_key'
 
 @app.route("/")
 def dashboard():

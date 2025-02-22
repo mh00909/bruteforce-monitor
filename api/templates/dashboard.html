@@ -9,6 +9,15 @@
 <body>
     <h1>🔥 Dashboard Monitorujący Ataki Brute-Force 🔒</h1>
 
+
+    <section id="loginSection">
+        <h2>🔑 Logowanie</h2>
+        <input type="text" id="username" placeholder="Login" />
+        <input type="password" id="password" placeholder="Hasło" />
+        <button onclick="login()">Zaloguj</button>
+        <p id="loginStatus"></p>
+    </section>
+    
     <section>
         <h2>📊 Próby logowania</h2>
         <canvas id="loginAttemptsChart" width="400" height="200"></canvas>
@@ -18,6 +27,37 @@
         <h2>🚫 Zbanowane IP</h2>
         <ul id="blockedIpsList"></ul>
     </section>
+
+    <section>
+        <h2>🛡️ Zbanuj IP ręcznie</h2>
+        <input type="text" id="ipInput" placeholder="Wprowadź IP do zbanowania" />
+        <button onclick="banIp()">Zbanuj IP</button>
+        <p id="banStatus"></p>
+    </section>
+
+    <section>
+        <h2>🔓 Odblokuj IP ręcznie</h2>
+        <input type="text" id="unblockIpInput" placeholder="Wprowadź IP do odblokowania" />
+        <button onclick="unblockIp()">Odblokuj IP</button>
+        <p id="unblockStatus"></p>
+    </section>
+    
+    <section>
+        <h2>📜 Historia blokad i odblokowań</h2>
+        <button onclick="downloadHistory()">⬇️ Pobierz CSV</button>
+        <table id="historyTable">
+            <thead>
+                <tr>
+                    <th>Adres IP</th>
+                    <th>Akcja</th>
+                    <th>Data i godzina</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+    
+    
 
     <script src="/static/js/charts.js"></script>
 </body>

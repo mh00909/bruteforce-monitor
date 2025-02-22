@@ -31,3 +31,55 @@ li {
     margin: 5px;
     border-radius: 5px;
 }
+
+input[type="text"] {
+    padding: 10px;
+    width: 250px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+button:hover {
+    background-color: #2ecc71;
+}
+
+#banStatus {
+    margin-top: 10px;
+    font-weight: bold;
+}
+#unblockStatus {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+table {
+    width: 90%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background-color: #34495e;
+    color: #fff;
+}
+
+tr:nth-child(even) {
+    background-color: #ecf0f1;
+}
