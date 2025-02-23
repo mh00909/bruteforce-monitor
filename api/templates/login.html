@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <section id="loginSection">
+        <h2>🔑 Logowanie</h2>
+        <input type="text" id="username" placeholder="Login" />
+        <input type="password" id="password" placeholder="Hasło" />
+        <button onclick="login()">Zaloguj</button>
+        <p id="loginStatus"></p>
+    </section>
+
+    <script>
+        if (localStorage.getItem("jwtToken")) {
+            window.location.href = "/dashboard"; 
+        }
+
+        async function login() {
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const status = document.getElementById("loginStatus");
+
+            if (!username || !password) {
+                status.textContent = "⚠️ Podaj login i hasło.";
+                return;
+            }
+
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem("jwtToken", data.token);
+                window.location.href = "/dashboard"; 
+            } else {
+                status.textContent = `❌ ${data.error}`;
+            }
+        }
+    </script>
+</body>
+</html>

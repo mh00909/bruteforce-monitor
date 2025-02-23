@@ -4,3 +4,4 @@
 {"ip": "1.1.1.4", "action": "blocked", "timestamp": "2025-02-21 16:01:42"}
 {"ip": "1.1.1.4", "action": "unblocked", "timestamp": "2025-02-21 16:01:56"}
 {"ip": "100.100.100.1", "action": "unblocked", "timestamp": "2025-02-21 16:02:08"}
+{"ip": "100.100.100.1", "action": "blocked", "timestamp": "2025-02-22 15:58:42"}

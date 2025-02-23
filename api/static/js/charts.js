@@ -196,22 +196,100 @@ async function login() {
     }
 }
 
+
+
+
 function getToken() {
     return localStorage.getItem("jwtToken");
 }
 
 async function authorizedFetch(url, options = {}) {
     const token = getToken();
-    if (!token) throw new Error("Brak tokenu. Zaloguj się.");
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
 
     options.headers = {
         ...(options.headers || {}),
         Authorization: `Bearer ${token}`,
     };
 
-    return fetch(url, options);
+    const response = await fetch(url, options);
+    if (response.status === 401) {
+        localStorage.removeItem("jwtToken");
+        window.location.href = "/login";
+    }
+    return response;
 }
 
+async function fetchFailedAttempts() {
+    const response = await authorizedFetch("/api/failed_attempts");
+    if (!response.ok) return [];
+    return (await response.json()).failed_attempts;
+}
 
+async function fetchBlockedIps() {
+    const response = await authorizedFetch("/api/blocked_ips");
+    return (await response.json()).blocked_ips;
+}
 
-initializeDashboard();
+async function fetchBlockHistory() {
+    const response = await authorizedFetch("/api/block_history");
+    return (await response.json()).history;
+}
+
+function renderLoginAttemptsChart(data) {
+    const ctx = document.getElementById("loginAttemptsChart").getContext("2d");
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: Object.keys(data),
+            datasets: [{
+                label: "Liczba prób logowania",
+                data: Object.values(data),
+                backgroundColor: "rgba(255, 99, 132, 0.6)"
+            }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+}
+
+function renderBlockedIpsList(ips) {
+    const list = document.getElementById("blockedIpsList");
+    list.innerHTML = "";
+    ips.forEach(ip => {
+        const li = document.createElement("li");
+        li.textContent = ip;
+        list.appendChild(li);
+    });
+}
+
+function renderBlockHistory(history) {
+    const tableBody = document.querySelector("#historyTable tbody");
+    tableBody.innerHTML = "";
+    history.forEach(entry => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${entry.ip}</td>
+            <td>${entry.action === "blocked" ? "🔒 Zablokowano" : "🔓 Odblokowano"}</td>
+            <td>${entry.timestamp}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+async function initializeDashboard() {
+    try {
+        const attempts = await fetchFailedAttempts();
+        const blockedIps = await fetchBlockedIps();
+        const history = await fetchBlockHistory();
+
+        renderLoginAttemptsChart(attempts);
+        renderBlockedIpsList(blockedIps);
+        renderBlockHistory(history);
+    } catch (error) {
+        console.error("❌ Błąd ładowania dashboardu:", error);
+        window.location.href = "/login";
+    }
+}

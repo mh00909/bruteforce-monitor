@@ -7,6 +7,7 @@ import os
 import io
 import csv
 import subprocess
+from api.auth.decorators import role_required, token_required
 from src.monitor_logs import monitor_login_attempts
 from src.block_ip import block_ip
 
@@ -18,27 +19,8 @@ LOG_FILE = "logs/auth_attempts.log"
 HISTORY_FILE = "logs/block_history.json"
 
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
-
-        if not token:
-            return jsonify({"error": "Token wymagany."}), 401
-
-        try:
-            token = token.replace("Bearer ", "")
-            jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token wygasł."}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"error": "Nieprawidłowy token."}), 401
-
-        return f(*args, **kwargs)
-    return decorated
-
-
-@api_blueprint.route("/failed_attempts", methods=["GET"])
+@api_blueprint.route("/api/failed_attempts", methods=["GET"])
+@role_required("view_data")
 @token_required
 def get_failed_attempts():
     attempts = monitor_login_attempts()
@@ -48,6 +30,7 @@ def get_failed_attempts():
 
 @api_blueprint.route("/blocked_ips", methods=["GET"])
 @token_required
+@role_required("view_data")
 def get_blocked_ips():
     try:
         result = subprocess.run(
@@ -73,6 +56,7 @@ def get_blocked_ips():
 
 @api_blueprint.route("/block_ip", methods=["POST"])
 @token_required
+@role_required("block_ip")
 def post_block_ip():
     data = request.get_json()
     ip = data.get("ip")
@@ -90,6 +74,7 @@ def post_block_ip():
 
 @api_blueprint.route("/unblock_ip", methods=["POST"])
 @token_required
+@role_required("unblock_ip")
 def unblock_ip():
     data = request.get_json()
     ip = data.get("ip")
@@ -114,6 +99,7 @@ def unblock_ip():
 
 @api_blueprint.route("/block_history", methods=["GET"])
 @token_required
+@role_required("view_data")
 def get_block_history():
     if not os.path.exists(HISTORY_FILE):
         return jsonify({"history": []}), 200
@@ -128,6 +114,7 @@ def get_block_history():
 
 @api_blueprint.route("/export_history", methods=["GET"])
 @token_required
+@role_required("view_data")
 def export_history():
     if not os.path.exists(HISTORY_FILE):
         return jsonify({"error": "Brak historii do eksportu."}), 404
@@ -166,29 +153,26 @@ def export_history():
 
 
 @api_blueprint.route("/login", methods=["POST"])
-@token_required
 def login():
     auth = request.get_json()
 
-    if not auth or not auth.get("username") or not auth.get("password"):
-        return jsonify({"error": "Podaj login i hasło."}), 400
+    users = {
+        "admin": {"password": "adminpass", "role": "admin"},
+        "user": {"password": "userpass", "role": "user"}
+    }
 
-    username = auth.get("username")
-    password = auth.get("password")
-
-    users = {"admin": "adminpass", "user": "userpass"}
-
-    if users.get(username) != password:
+    user = users.get(auth.get("username"))
+    if not user or user["password"] != auth.get("password"):
         return jsonify({"error": "Nieprawidłowe dane logowania."}), 401
 
-    token = jwt.encode(
-        {"user": username, "exp": datetime.utcnow() + timedelta(hours=2)},
-        current_app.config['SECRET_KEY'],
-        algorithm="HS256"
-    )
+    payload = {
+        "user": auth.get("username"),
+        "role": user["role"],
+        "exp": datetime.utcnow() + timedelta(hours=2)
+    }
 
+    token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm="HS256")
     return jsonify({"token": token})
-
 
 
 
