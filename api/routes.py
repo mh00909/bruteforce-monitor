@@ -19,9 +19,9 @@ LOG_FILE = "logs/auth_attempts.log"
 HISTORY_FILE = "logs/block_history.json"
 
 
-@api_blueprint.route("/api/failed_attempts", methods=["GET"])
-@role_required("view_data")
+@api_blueprint.route("/failed_attempts", methods=["GET"])
 @token_required
+@role_required("view_data")
 def get_failed_attempts():
     attempts = monitor_login_attempts()
     return jsonify({"failed_attempts": attempts}), 200
@@ -149,6 +149,22 @@ def export_history():
         return jsonify({"error": f"Błąd podczas eksportu: {str(e)}"}), 500
     
 
+@api_blueprint.route("/bot_activity", methods=["GET"])
+@token_required
+@role_required("view_data")
+def get_bot_activity():
+    if not os.path.exists(HISTORY_FILE):
+        return jsonify({"activity": []}), 200
+
+    with open(HISTORY_FILE, "r") as file:
+        history = [json.loads(line) for line in file.readlines()]
+
+    bot_activity = [
+        {"ip": entry["ip"], "timestamp": entry["timestamp"]}
+        for entry in history if entry["action"] == "blocked"
+    ]
+
+    return jsonify({"activity": bot_activity}), 200
 
 
 

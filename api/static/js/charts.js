@@ -293,3 +293,34 @@ async function initializeDashboard() {
         window.location.href = "/login";
     }
 }
+
+async function fetchBotActivity() {
+    const response = await authorizedFetch("/api/bot_activity");
+    const data = await response.json();
+    return data.activity;
+}
+
+function renderBotActivityChart(activity) {
+    const ctx = document.getElementById("botActivityChart").getContext("2d");
+    const labels = activity.map(entry => entry.timestamp);
+    const ips = activity.map(entry => entry.ip);
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Wykryte boty (adresy IP)",
+                data: ips,
+                backgroundColor: "rgba(54, 162, 235, 0.6)",
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: "Czas wykrycia" } },
+                y: { title: { display: true, text: "Adresy IP" } }
+            }
+        }
+    });
+}

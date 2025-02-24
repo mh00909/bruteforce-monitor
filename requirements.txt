@@ -6,3 +6,5 @@ numpy
 matplotlib
 PyJWT
 flask-cors
+requests
+flask_cors
