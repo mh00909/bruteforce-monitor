@@ -122,7 +122,7 @@ def export_history():
     try:
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Adres IP", "Akcja", "Data i godzina"])  # Nagłówki
+        writer.writerow(["Adres IP", "Akcja", "Data i godzina"]) 
 
         with open(HISTORY_FILE, "r") as infile:
             for line in infile:
@@ -134,8 +134,7 @@ def export_history():
                         entry.get("timestamp", "Brak daty")
                     ])
                 except json.JSONDecodeError as e:
-                    print(f"⚠️ Błąd w linii historii: {e}")  # Wyświetla problematyczne linie
-
+                    print(f"⚠️ Błąd w linii historii: {e}")  
         output.seek(0)
         return send_file(
             io.BytesIO(output.getvalue().encode('utf-8')),
@@ -149,23 +148,21 @@ def export_history():
         return jsonify({"error": f"Błąd podczas eksportu: {str(e)}"}), 500
     
 
+
 @api_blueprint.route("/bot_activity", methods=["GET"])
 @token_required
 @role_required("view_data")
 def get_bot_activity():
-    if not os.path.exists(HISTORY_FILE):
+    BOT_ACTIVITY_LOG = "logs/bot_activity.log"
+
+    if not os.path.exists(BOT_ACTIVITY_LOG):
         return jsonify({"activity": []}), 200
 
-    with open(HISTORY_FILE, "r") as file:
-        history = [json.loads(line) for line in file.readlines()]
+    with open(BOT_ACTIVITY_LOG, "r") as file:
+        activity = [json.loads(line) for line in file.readlines()]
 
-    bot_activity = [
-        {"ip": entry["ip"], "timestamp": entry["timestamp"]}
-        for entry in history if entry["action"] == "blocked"
-    ]
-
-    return jsonify({"activity": bot_activity}), 200
-
+    activity.sort(key=lambda x: x["timestamp"], reverse=True)
+    return jsonify({"activity": activity}), 200
 
 
 @api_blueprint.route("/login", methods=["POST"])
@@ -202,3 +199,7 @@ def save_to_history(ip, action):
 
     with open(HISTORY_FILE, "a") as file:
         file.write(json.dumps(entry) + "\n")
+
+
+
+

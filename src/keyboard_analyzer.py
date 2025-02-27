@@ -8,9 +8,14 @@ from src.block_ip import block_ip
 
 LOG_PATH = "logs/keyboard_activity.log"
 API_URL = "http://localhost:5000/api/block_ip"
+BOT_ACTIVITY_LOG = "logs/bot_activity.log"
 
-# def on_key(event):
-#     keystrokes.append((event.name, time.time()))
+TEST_IP = "192.168.60.100"
+
+def get_jwt_token(username, password):
+    response = requests.post("http://localhost:5000/api/login", json={"username": username, "password": password})
+    return response.json().get("token") if response.status_code == 200 else None
+
 
 def analyze_keystrokes(keystrokes, ip=None):
     times = keystrokes
@@ -43,19 +48,16 @@ def save_log(keystrokes):
         file.write(json.dumps(data) + "\n")
     print(f"✅ Zapisano logi do {LOG_PATH}")
 
-
-def block_ip_via_api(ip):
-    token = "YOUR_ADMIN_JWT_TOKEN_HERE"  
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    response = requests.post(API_URL, json={"ip": ip}, headers=headers)
-    if response.status_code == 200:
-        print(f"✅ Zablokowano IP przez API: {ip}")
-    else:
-        print(f"❌ Błąd blokowania IP ({ip}): {response.json().get('error')}")
-
+def save_bot_activity(ip):
+    activity = {
+        "ip": ip,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    with open(BOT_ACTIVITY_LOG, "a") as file:
+        file.write(json.dumps(activity) + "\n")
+    print(f"✅ Zapisano aktywność bota do {BOT_ACTIVITY_LOG}")
 
 
-TEST_IP = "192.168.1.100"
 
 def simulate_bot_typing():
     print("Symulacja bota...")
@@ -68,6 +70,7 @@ def simulate_bot_typing():
     if prediction == "bot":
         print(f"⚠️ Bot wykryty! Blokowanie IP {TEST_IP}...")
         block_ip_via_api(TEST_IP)
+        save_bot_activity(TEST_IP)
 
 
 def simulate_human_typing():
@@ -77,6 +80,22 @@ def simulate_human_typing():
 
     prediction = analyze_keystrokes(human_keystrokes)
     print(f"🔍 Wykryto: {prediction} dla IP {TEST_IP}")
+
+
+
+def block_ip_via_api(ip):
+    token = get_jwt_token("admin", "adminpass")
+    if not token:
+        print("❌ Nie udało się pobrać tokenu.")
+        return
+
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    response = requests.post(API_URL, json={"ip": ip}, headers=headers)
+    if response.status_code == 200:
+        print(f"✅ Zablokowano IP przez API: {ip}")
+    else:
+        print(f"❌ Błąd blokowania IP ({ip}): {response.json().get('error')}")
+
 
 if __name__ == "__main__":
     mode = input("Wybierz tryb: bot (b) / człowiek (h): ").strip().lower()

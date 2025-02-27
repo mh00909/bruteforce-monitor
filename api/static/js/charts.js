@@ -41,13 +41,6 @@ function renderBlockedIpsList(ips) {
     });
 }
 
-async function initializeDashboard() {
-    const attempts = await fetchFailedAttempts();
-    const blockedIps = await fetchBlockedIps();
-
-    renderLoginAttemptsChart(attempts);
-    renderBlockedIpsList(blockedIps);
-}
 
 async function banIp() {
     const ip = document.getElementById("ipInput").value.trim();
@@ -125,25 +118,6 @@ function renderBlockHistory(history) {
     });
 }
 
-async function initializeDashboard() {
-    const token = getToken();
-    if (!token) {
-        console.log("🔒 Brak tokenu. Zaloguj się.");
-        return;
-    }
-
-    try {
-        const attempts = await fetchFailedAttempts();
-        const blockedIps = await fetchBlockedIps();
-        const history = await fetchBlockHistory();
-
-        renderLoginAttemptsChart(attempts);
-        renderBlockedIpsList(blockedIps);
-        renderBlockHistory(history);
-    } catch (error) {
-        console.error("❌ Błąd podczas inicjalizacji:", error);
-    }
-}
 
 function downloadHistory() {
     fetch("/api/export_history")
@@ -197,31 +171,38 @@ async function login() {
 }
 
 
-
-
 function getToken() {
     return localStorage.getItem("jwtToken");
 }
 
+
 async function authorizedFetch(url, options = {}) {
     const token = getToken();
     if (!token) {
+        console.warn("🔒 Brak tokenu - przekierowanie na stronę logowania.");
         window.location.href = "/login";
-        return;
+        return Promise.reject("Brak tokenu");
     }
 
-    options.headers = {
+    const headers = {
         ...(options.headers || {}),
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
     };
 
-    const response = await fetch(url, options);
+    const response = await fetch(url, { ...options, headers });
+
     if (response.status === 401) {
+        console.warn("⚠️ Token wygasł lub jest nieprawidłowy - wylogowanie.");
         localStorage.removeItem("jwtToken");
         window.location.href = "/login";
+        return Promise.reject("Nieprawidłowy token");
     }
+
     return response;
 }
+
+
 
 async function fetchFailedAttempts() {
     const response = await authorizedFetch("/api/failed_attempts");
@@ -231,13 +212,22 @@ async function fetchFailedAttempts() {
 
 async function fetchBlockedIps() {
     const response = await authorizedFetch("/api/blocked_ips");
+    if (!response.ok) return [];
     return (await response.json()).blocked_ips;
 }
 
 async function fetchBlockHistory() {
     const response = await authorizedFetch("/api/block_history");
+    if (!response.ok) return [];
     return (await response.json()).history;
 }
+
+async function fetchBotActivity() {
+    const response = await authorizedFetch("/api/bot_activity");
+    if (!response.ok) return [];
+    return (await response.json()).activity;
+}
+
 
 function renderLoginAttemptsChart(data) {
     const ctx = document.getElementById("loginAttemptsChart").getContext("2d");
@@ -279,39 +269,19 @@ function renderBlockHistory(history) {
     });
 }
 
-async function initializeDashboard() {
-    try {
-        const attempts = await fetchFailedAttempts();
-        const blockedIps = await fetchBlockedIps();
-        const history = await fetchBlockHistory();
-
-        renderLoginAttemptsChart(attempts);
-        renderBlockedIpsList(blockedIps);
-        renderBlockHistory(history);
-    } catch (error) {
-        console.error("❌ Błąd ładowania dashboardu:", error);
-        window.location.href = "/login";
-    }
-}
-
-async function fetchBotActivity() {
-    const response = await authorizedFetch("/api/bot_activity");
-    const data = await response.json();
-    return data.activity;
-}
-
 function renderBotActivityChart(activity) {
     const ctx = document.getElementById("botActivityChart").getContext("2d");
-    const labels = activity.map(entry => entry.timestamp);
-    const ips = activity.map(entry => entry.ip);
+    const labels = activity.map(entry => entry.timestamp); // Czas wykrycia
+    const ips = activity.map(entry => entry.ip); // IP bota
+    const data = activity.map(() => 1); // Każdy bot = 1 detekcja
 
     new Chart(ctx, {
         type: "bar",
         data: {
             labels: labels,
             datasets: [{
-                label: "Wykryte boty (adresy IP)",
-                data: ips,
+                label: "Wykryte boty",
+                data: data,
                 backgroundColor: "rgba(54, 162, 235, 0.6)",
             }]
         },
@@ -319,8 +289,54 @@ function renderBotActivityChart(activity) {
             responsive: true,
             scales: {
                 x: { title: { display: true, text: "Czas wykrycia" } },
-                y: { title: { display: true, text: "Adresy IP" } }
+                y: { 
+                    beginAtZero: true, 
+                    title: { display: true, text: "Liczba botów" },
+                    ticks: { stepSize: 1 }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: (tooltipItems) => `Czas: ${tooltipItems[0].label}`,
+                        label: (tooltipItem) => `IP bota: ${ips[tooltipItem.dataIndex]}`,  
+                    }
+                }
             }
         }
     });
 }
+
+
+
+let dashboardInitialized = false;
+
+
+async function initializeDashboard() {
+    if (dashboardInitialized) return;  
+    dashboardInitialized = true;
+
+    try {
+        const [attempts, blockedIps, history, botActivity] = await Promise.all([
+            fetchFailedAttempts(),
+            fetchBlockedIps(),
+            fetchBlockHistory(),
+            fetchBotActivity()
+        ]);
+
+        renderLoginAttemptsChart(attempts);
+        renderBlockedIpsList(blockedIps);
+        renderBlockHistory(history);
+        renderBotActivityChart(botActivity);
+
+    } catch (error) {
+        console.error("❌ Błąd podczas inicjalizacji:", error);
+    }
+}
+
+function logout() {
+    localStorage.removeItem("jwtToken");
+    dashboardInitialized = false; 
+    window.location.href = "/login";
+}
+

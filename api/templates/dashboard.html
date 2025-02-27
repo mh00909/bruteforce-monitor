@@ -58,8 +58,6 @@
         </table>
     </section>
     
-    
-
     <script src="/static/js/charts.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -72,6 +70,8 @@
 
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
+            if (!payload.role || !payload.user) throw new Error("Brak roli lub użytkownika w tokenie");
+
             document.getElementById("userInfo").textContent = `👤 Zalogowany jako: ${payload.user} (${payload.role})`;
 
             if (payload.role === "admin") {
@@ -79,12 +79,14 @@
             }
 
             initializeDashboard();  
+
         } catch (err) {
             console.error("❌ Błąd w dekodowaniu tokenu:", err);
             localStorage.removeItem("jwtToken");
             window.location.href = "/login";
         }
     });
+
 
     </script>
 </body>

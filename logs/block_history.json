@@ -5,3 +5,7 @@
 {"ip": "1.1.1.4", "action": "unblocked", "timestamp": "2025-02-21 16:01:56"}
 {"ip": "100.100.100.1", "action": "unblocked", "timestamp": "2025-02-21 16:02:08"}
 {"ip": "100.100.100.1", "action": "blocked", "timestamp": "2025-02-22 15:58:42"}
+{"ip": "192.168.1.100", "action": "blocked", "timestamp": "2025-02-26 08:34:33"}
+{"ip": "192.168.6.100", "action": "blocked", "timestamp": "2025-02-26 08:44:59"}
+{"ip": "192.168.60.100", "action": "blocked", "timestamp": "2025-02-26 09:05:28"}
+{"ip": "192.168.60.100", "action": "blocked", "timestamp": "2025-02-26 09:07:24"}
